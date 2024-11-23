@@ -29,7 +29,7 @@ public_users.post("/register", (req,res) => {
           users.push({"username": username, "password": password});
           return res.status(200).json({message: "User successfully registered. Now you can login"});
       } else {
-          return res.status(404).json({message: "User already exists!"});
+          return res.status(404).json({message: "User already exists!"});//message is taken as a literal
       }
   }
   // Return error if username or password is missing
@@ -40,43 +40,87 @@ public_users.post("/register", (req,res) => {
 // Get the book list available in the shop
 public_users.get('/',function (req, res) {
   //Write your code here
-  res.send(JSON.stringify(books,null,4));
+  let listBooksPromise = new Promise((resolve,reject) => {
+      resolve("Got Books");
+  });
+  listBooksPromise.then((success)=>{
+    res.send(JSON.stringify(books,null,4));
+  });
+  
   //return res.status(300).json({message: "Yet to be implemented"});
 });
 
 // Get book details based on ISBN
 public_users.get('/isbn/:isbn',function (req, res) {
   //Write your code here
-  isbn = req.params.isbn;
-  res.send(books[isbn]);
+  let getBookPromise = new Promise((resolve,reject) => {
+    resolve("Got Book");
+  });
+  getBookPromise.then((success)=>{
+    isbn = req.params.isbn;
+    res.send(books[isbn]);
+  });
+ 
   //return res.status(300).json({message: "Yet to be implemented"});
  });
   
 // Get book details based on author
 public_users.get('/author/:author',function (req, res) {
-  //Write your code here
-  author = req.params.author;
-  isbns = Object.keys(books);
-  booksByAuthor = [];
-  isbns.forEach((isbn) => {
-     if (books[isbn].author === author)
-        booksByAuthor.push({[isbn]:books[isbn]});
+  let getBookByAuthorPromise = new Promise((resolve,reject) => {
+    function doGruntWork(){  
+      author = req.params.author;
+      isbns = Object.keys(books);
+      booksByAuthor = [];
+      isbns.forEach((isbn) => {
+        if (books[isbn].author === author)
+            booksByAuthor.push({[isbn]:books[isbn]});
+      });
+      res.send(booksByAuthor);
+    }
+    //----
+    setTimeout(()=>{reject("Timed Out");}, 2000);//Could not test this
+    doGruntWork();
+    resolve("listing of books by author all done");
   });
-  res.send(booksByAuthor);
+  getBookByAuthorPromise
+  .then((success)=>{
+    console.log(success);
+    //res.send(success);
+  })
+  .catch((err)=>{res.send(err)});
+
+  //Write your code here
+
   //return res.status(300).json({message: "Yet to be implemented"});
 });
 
 // Get all books based on title
 public_users.get('/title/:title',function (req, res) {
   //Write your code here
-  title = req.params.title;
-  isbns = Object.keys(books);
-  booksOfTitle = [];
-  isbns.forEach((isbn) => {
-     if (books[isbn].title === title)
-     booksOfTitle.push({[isbn]:books[isbn]});
+  let getBookByTitlePromise = new Promise((resolve,reject) => {
+    function doGruntWork(){  
+      title = req.params.title;
+      isbns = Object.keys(books);
+      booksOfTitle = [];
+      isbns.forEach((isbn) => {
+         if (books[isbn].title === title)
+         booksOfTitle.push({[isbn]:books[isbn]});
+      });
+      res.send(booksOfTitle);
+    }
+    //----
+    setTimeout(()=>{reject("Timed Out");}, 2000);
+    doGruntWork();
+    resolve("Books by title all done");
   });
-  res.send(booksOfTitle);
+  getBookByTitlePromise
+  .then((success)=>{
+    console.log (success);
+    //res.send(success); //Cannot set headers after they are sent to the client
+  })
+  .catch((err)=>{res.send(err)});
+
+ 
   //return res.status(300).json({message: "Yet to be implemented"});
 });
 
