@@ -22,6 +22,7 @@ public_users.post("/register", (req,res) => {
       }
   }
   // Check if both username and password are provided
+  // Why are we using return??
   if (username && password) {
       // Check if the user does not already exist
       if (!doesExist(username)) {
@@ -29,11 +30,11 @@ public_users.post("/register", (req,res) => {
           users.push({"username": username, "password": password});
           return res.status(200).json({message: "User successfully registered. Now you can login"});
       } else {
-          return res.status(404).json({message: "User already exists!"});//message is taken as a literal
+          return res.status(400).json({message: `User ${username} already exists! Cannot register again.`});//message is taken as a literal
       }
   }
   // Return error if username or password is missing
-  return res.status(404).json({message: "Unable to register user."});
+  return res.status(400).json({message: "Unable to register user."});
  //return res.status(300).json({message: "Yet to be implemented"});
 });
 //Different ways of handling Promise.then().catch() are shown
