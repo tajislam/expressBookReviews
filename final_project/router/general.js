@@ -36,16 +36,22 @@ public_users.post("/register", (req,res) => {
   return res.status(404).json({message: "Unable to register user."});
  //return res.status(300).json({message: "Yet to be implemented"});
 });
-
+//Different ways of handling Promise.then().catch() are shown
 // Get the book list available in the shop
 public_users.get('/',function (req, res) {
   //Write your code here
   let listBooksPromise = new Promise((resolve,reject) => {
-      resolve("Got Books");
+    try{
+      booksJSON = JSON.stringify(books,null,4);
+      resolve(booksJSON);
+    }
+    catch(err){reject(err);}
   });
-  listBooksPromise.then((success)=>{
-    res.send(JSON.stringify(books,null,4));
-  });
+  listBooksPromise
+    .then((bookList)=>{
+       res.send(bookList);
+      })
+    .catch(err => {res.status(400).json({message: err});});
   
   //return res.status(300).json({message: "Yet to be implemented"});
 });
@@ -54,12 +60,14 @@ public_users.get('/',function (req, res) {
 public_users.get('/isbn/:isbn',function (req, res) {
   //Write your code here
   let getBookPromise = new Promise((resolve,reject) => {
-    resolve("Got Book");
-  });
-  getBookPromise.then((success)=>{
     isbn = req.params.isbn;
-    res.send(books[isbn]);
+    if (books[isbn])
+      resolve(books[isbn]);
+    else
+      reject(`Book with ISBN ${isbn} not found`);
   });
+  getBookPromise.then((book)=>{res.send(book);  }, 
+                      (errmsg) =>{res.status(404).json({message: errmsg})});
  
   //return res.status(300).json({message: "Yet to be implemented"});
  });
@@ -67,60 +75,58 @@ public_users.get('/isbn/:isbn',function (req, res) {
 // Get book details based on author
 public_users.get('/author/:author',function (req, res) {
   let getBookByAuthorPromise = new Promise((resolve,reject) => {
-    function doGruntWork(){  
-      author = req.params.author;
+    function doGruntWork(author){  
+      //author = req.params.author;
       isbns = Object.keys(books);
       booksByAuthor = [];
       isbns.forEach((isbn) => {
         if (books[isbn].author === author)
             booksByAuthor.push({[isbn]:books[isbn]});
       });
-      res.send(booksByAuthor);
+      return(booksByAuthor);
     }
     //----
     setTimeout(()=>{reject("Timed Out");}, 2000);//Could not test this
-    doGruntWork();
-    resolve("listing of books by author all done");
+    booksByAuthor = doGruntWork(req.params.author);
+    if (booksByAuthor.length >= 1)
+      resolve(booksByAuthor);
+    else
+      reject(`No books found for author ${req.params.author}. Try with a different author`);
   });
   getBookByAuthorPromise
-  .then((success)=>{
-    console.log(success);
-    //res.send(success);
-  })
-  .catch((err)=>{res.send(err)});
-
-  //Write your code here
-
+  .then((books)=>{ res.send(books);}, 
+        (errmsg)=>{res.status(404).json({message: errmsg})});
   //return res.status(300).json({message: "Yet to be implemented"});
 });
 
 // Get all books based on title
 public_users.get('/title/:title',function (req, res) {
+  //If no title is provided it does not reach here. Rejected by the router!
   //Write your code here
   let getBookByTitlePromise = new Promise((resolve,reject) => {
-    function doGruntWork(){  
-      title = req.params.title;
+    function doGruntWork(title){  
+      
       isbns = Object.keys(books);
       booksOfTitle = [];
       isbns.forEach((isbn) => {
          if (books[isbn].title === title)
          booksOfTitle.push({[isbn]:books[isbn]});
       });
-      res.send(booksOfTitle);
+      return (booksOfTitle);
     }
     //----
     setTimeout(()=>{reject("Timed Out");}, 2000);
-    doGruntWork();
-    resolve("Books by title all done");
+    title = req.params.title;
+    booksWithRequestedTitle = doGruntWork(title);
+    //When nothing is found you could regard that as a success also, but here it is error
+    if (booksWithRequestedTitle.length >= 1)
+        resolve(booksWithRequestedTitle);
+    else
+        reject(`Books with title ${title} not found. Try a different title`);
   });
   getBookByTitlePromise
-  .then((success)=>{
-    console.log (success);
-    //res.send(success); //Cannot set headers after they are sent to the client
-  })
-  .catch((err)=>{res.send(err)});
-
- 
+    .then((books)=>{res.send(books);})
+    .catch((errmsg) => {res.status(404).json({message: errmsg})});
   //return res.status(300).json({message: "Yet to be implemented"});
 });
 
@@ -128,7 +134,11 @@ public_users.get('/title/:title',function (req, res) {
 public_users.get('/review/:isbn',function (req, res) {
   //Write your code here
   isbn = req.params.isbn;
-  res.send({[books[isbn].title] : books[isbn].reviews});
+  b = books[isbn];
+  if (b)
+      res.send({[b.title] : b.reviews});
+  else
+      res.send({message : `Book with ISBN ${isbn} not found`});
   //return res.status(300).json({message: "Yet to be implemented"});
 });
 
